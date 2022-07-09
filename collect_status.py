@@ -107,9 +107,9 @@ class TreeHerder:
 
             for job in jobs:
                 if name in job:
-                    return cls.job(job[1])
+                    return cls.job(job[1]), result['revision']
 
-        return None
+        return None, None
 
     @classmethod
     def find_artifact_json(cls, job, name):
@@ -138,13 +138,13 @@ class StatusUpdater:
             log_data = []
 
         if len(log_data) > 0:
-            last_date = log_data[-1][0]
+            last_date = log_data[-1]["date"]
         else:
             last_date = None
 
         Logger.info('Finding latest artifact')
 
-        job = TreeHerder.find_job(job_name)
+        job, rev = TreeHerder.find_job(job_name)
         if not job:
             Logger.info('No job found')
             return
@@ -164,7 +164,10 @@ class StatusUpdater:
 
         Logger.info('Saving log')
 
-        log_data.append([date, artifact])
+        artifact['hash'] = rev
+        artifact['date'] = date
+
+        log_data.append(artifact)
 
         with open(log_file, 'w') as f:
             f.write(json.dumps(log_data))
