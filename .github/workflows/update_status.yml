@@ -1,0 +1,53 @@
+name: Collect status JSON
+
+on:
+  schedule:
+    # Run daily at 12:00 UTC
+    #
+    # The treeherder job is scheduled at 00:00 UTC, and it will be handled on
+    # the next push, that will be around 06:00 UTC, and should finish before
+    # 12:00 UTC.
+    #
+    # The script checks the latest 10 pushes, so it should cover even if there
+    # are some more pushes after the push that has the job.
+    - cron: '0 12 * * *'
+  push:
+    branch: gh-pages
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: gh-pages
+    - name: Setup Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: "3.7"
+    - name: Setup Git Profile
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+    - name: Collect status JSON
+      run: python3 collect_status.py
+    - name: Add files
+      run: |
+        git add .
+        set +e
+        git diff --cached --quiet
+        echo "##[set-output name=modified;]$?"
+        set -e
+      id: status_add
+    - name: Commit files
+      if: steps.status_add.outputs.modified == '1'
+      run: |
+        git commit -m "Update status JSON" -a
+    - name: Push changes
+      if: steps.status_add.outputs.modified == '1'
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: gh-pages
