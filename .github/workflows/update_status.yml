@@ -2,15 +2,9 @@ name: Collect status JSON
 
 on:
   schedule:
-    # Run daily at 12:00 UTC
-    #
-    # The treeherder job is scheduled at 00:00 UTC, and it will be handled on
-    # the next push, that will be around 06:00 UTC, and should finish before
-    # 12:00 UTC.
-    #
-    # The script checks the latest 10 pushes, so it should cover even if there
-    # are some more pushes after the push that has the job.
-    - cron: '0 12 * * *'
+    # Merge happens twice a day, and either of them runs the js(esm) job.
+    # Run this twice a day as well, to catch both of them.
+    - cron: '0 0,12 * * *'
   push:
     branch: gh-pages
 
